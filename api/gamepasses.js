@@ -8,11 +8,10 @@ export default async function handler(req, res) {
     
     try {
         const response = await fetch(
-            `https://inventory.roblox.com/v2/users/${userId}/assets/gamepasses?limit=100&cursor=${cursor || ""}`,
+            `https://catalog.roblox.com/v1/search/items?category=GamePass&creatorType=User&creatorTargetId=${userId}&limit=30&cursor=${cursor || ""}`,
             {
                 headers: {
                     "Accept": "application/json",
-                    "Content-Type": "application/json"
                 }
             }
         );
