@@ -7,41 +7,45 @@ export default async function handler(req, res) {
     }
     
     try {
-        const listRes = await fetch(
-            `https://catalog.roblox.com/v1/search/items?category=GamePass&creatorType=User&creatorTargetId=${userId}&limit=30&cursor=${cursor || ""}`,
+        // step 1: fetch semua game milik user
+        const gamesRes = await fetch(
+            `https://games.roproxy.com/v2/users/${userId}/games?accessFilter=Public&limit=50`,
             { headers: { "Accept": "application/json" } }
         );
-        const listData = await listRes.json();
+        const gamesData = await gamesRes.json();
         
-        if (!listData.data || listData.data.length === 0) {
+        if (!gamesData.data || gamesData.data.length === 0) {
             return res.json({ passes: [] });
         }
 
-        // fetch detail per item satu per satu pakai economy API
+        // step 2: fetch gamepasses per universe
         const passes = [];
-        for (const item of listData.data) {
+        for (const game of gamesData.data) {
+            const universeId = game.id;
             try {
-                const detailRes = await fetch(
-                    `https://economy.roblox.com/v2/game-passes/${item.id}/game-pass-product-info`,
+                const passRes = await fetch(
+                    `https://apis.roproxy.com/game-passes/v1/universes/${universeId}/game-passes?limit=100`,
                     { headers: { "Accept": "application/json" } }
                 );
-                const detail = await detailRes.json();
-                if (detail && detail.Name) {
-                    passes.push({
-                        Id: item.id,
-                        Name: detail.Name,
-                        Price: detail.PriceInRobux || 0,
-                    });
+                const passData = await passRes.json();
+                
+                if (passData.gamePasses) {
+                    for (const pass of passData.gamePasses) {
+                        if (pass.isForSale) {
+                            passes.push({
+                                Id: pass.id,
+                                Name: pass.displayName || pass.name,
+                                GameName: game.name,
+                            });
+                        }
+                    }
                 }
             } catch(e) {
-                console.error("detail error:", e.message);
+                console.error("gamepass fetch error:", e.message);
             }
         }
 
-        res.json({ 
-            passes,
-            nextPageCursor: listData.nextPageCursor || null
-        });
+        res.json({ passes });
 
     } catch(e) {
         res.status(500).json({ error: e.message });
