@@ -8,7 +8,13 @@ export default async function handler(req, res) {
     
     try {
         const response = await fetch(
-            `https://www.roblox.com/users/inventory/list-json?assetTypeId=34&cursor=${cursor || ""}&itemsPerPage=100&userId=${userId}`
+            `https://inventory.roblox.com/v2/users/${userId}/assets/gamepasses?limit=100&cursor=${cursor || ""}`,
+            {
+                headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json"
+                }
+            }
         );
         const data = await response.json();
         res.json(data);
