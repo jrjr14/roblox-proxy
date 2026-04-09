@@ -7,7 +7,6 @@ export default async function handler(req, res) {
     }
     
     try {
-        // fetch list gamepass
         const listRes = await fetch(
             `https://catalog.roblox.com/v1/search/items?category=GamePass&creatorType=User&creatorTargetId=${userId}&limit=30&cursor=${cursor || ""}`,
             { headers: { "Accept": "application/json" } }
@@ -15,11 +14,9 @@ export default async function handler(req, res) {
         const listData = await listRes.json();
         
         if (!listData.data || listData.data.length === 0) {
-            return res.json({ passes: [] });
+            return res.json({ passes: [], debug: "listData empty", listData });
         }
 
-        // fetch detail per item
-        const ids = listData.data.map(item => item.id).join(",");
         const detailRes = await fetch(
             `https://catalog.roblox.com/v1/catalog/items/details`,
             {
@@ -38,15 +35,10 @@ export default async function handler(req, res) {
         );
         const detailData = await detailRes.json();
 
-        const passes = (detailData.data || []).map(item => ({
-            Id: item.id,
-            Name: item.name,
-            Price: item.price || 0,
-        }));
-
+        // debug
         res.json({ 
-            passes,
-            nextPageCursor: listData.nextPageCursor || null
+            listData,
+            detailData,
         });
 
     } catch(e) {
